@@ -1,0 +1,129 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - Leave & Substitution{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Leave & Substitution</h1>
+    <p>When an employee takes leave, 25% of their daily salary goes to the substitute employee.</p>
+</div>
+
+<!-- Apply Leave -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h3>Apply for Leave with Substitution</h3>
+    </div>
+    <form method="POST" action="{{ url_for('apply_leave') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="absent_employee_id">Absent Employee</label>
+                <select id="absent_employee_id" name="absent_employee_id" class="form-control" required>
+                    <option value="">Select who is on leave</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.emp_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="substitute_employee_id">Substitute Employee</label>
+                <select id="substitute_employee_id" name="substitute_employee_id" class="form-control" required>
+                    <option value="">Select substitute</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.emp_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+            <div class="form-group">
+                <label for="leave_date">Leave Date</label>
+                <input type="date" id="leave_date" name="leave_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="reason">Reason</label>
+                <input type="text" id="reason" name="reason" class="form-control" placeholder="Reason for leave (optional)">
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap: 16px;">
+            <button type="submit" class="btn btn-primary">📋 Submit Leave Request</button>
+            <span style="font-size: 13px; color: var(--text-muted);">25% of daily salary will be calculated and transferred to the substitute.</span>
+        </div>
+    </form>
+</div>
+
+<!-- Leave Records -->
+<div class="card">
+    <div class="card-header">
+        <h3>📊 Leave & Substitution Records</h3>
+    </div>
+
+    {% if leaves %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Absent Employee</th>
+                    <th>Substitute</th>
+                    <th>Date</th>
+                    <th>Transfer Amount</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    {% if session.get('role') == 'hr' %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for lv in leaves %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 600;">
+                        {{ lv.absent_name }}<br>
+                        <span style="font-size:11px; color: var(--text-muted);">{{ lv.absent_code }}</span>
+                    </td>
+                    <td style="color: var(--accent-tertiary); font-weight: 600;">
+                        {{ lv.substitute_name }}<br>
+                        <span style="font-size:11px; color: var(--text-muted);">{{ lv.substitute_code }}</span>
+                    </td>
+                    <td>{{ lv.leave_date }}</td>
+                    <td class="money text-success">₹{{ "{:,.2f}".format(lv.salary_transfer_amount) }}</td>
+                    <td>
+                        {% if lv.status == 'approved' %}
+                        <span class="badge badge-success">✅ Approved</span>
+                        {% elif lv.status == 'accepted' %}
+                        <span class="badge badge-info">🤝 Accepted by Sub</span>
+                        {% elif lv.status == 'declined' %}
+                        <span class="badge badge-danger">❌ Declined by Sub</span>
+                        {% elif lv.status == 'rejected' %}
+                        <span class="badge badge-danger">❌ Rejected by HR</span>
+                        {% else %}
+                        <span class="badge badge-warning">⏳ Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="max-width: 150px; overflow:hidden; text-overflow: ellipsis;">{{ lv.reason or '—' }}</td>
+                    {% if session.get('role') == 'hr' %}
+                    <td>
+                        {% if lv.status == 'pending' %}
+                        <div class="btn-group">
+                            <a href="{{ url_for('approve_leave', leave_id=lv.id) }}" class="btn btn-sm btn-success">✅ Approve</a>
+                            <a href="{{ url_for('reject_leave', leave_id=lv.id) }}" class="btn btn-sm btn-danger">❌</a>
+                        </div>
+                        {% else %}
+                        <span style="font-size: 12px; color: var(--text-muted);">
+                            {% if lv.message_sent %}📩 Notified{% endif %}
+                        </span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No leave records</h3>
+        <p>Submit a leave request using the form above.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

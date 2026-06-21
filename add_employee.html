@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - Add Employee{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Add New Employee</h1>
+    <p>Enter employee details. Salary can be entered in words (e.g., "fifty thousand") or numbers.</p>
+</div>
+
+<div class="card" style="max-width: 800px;">
+    <form method="POST" action="{{ url_for('add_employee') }}" id="addEmpForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="emp_code">Employee Code *</label>
+                <input type="text" id="emp_code" name="emp_code" class="form-control" placeholder="e.g., EMP001" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Enter full name" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="employee@company.com">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" name="phone" class="form-control" placeholder="+91 XXXXX XXXXX">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="department">Department</label>
+                <select id="department" name="department" class="form-control">
+                    <option value="">Select Department</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Finance">Finance</option>
+                    <option value="HR">Human Resources</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Design">Design</option>
+                    <option value="Support">Support</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="designation">Designation</label>
+                <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Software Engineer">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="basic_salary">Basic Salary * <span style="font-size:11px; color: var(--accent-tertiary);">(words or numbers)</span></label>
+                <input type="text" id="basic_salary" name="basic_salary" class="form-control" 
+                       placeholder='e.g., "fifty thousand" or "50000"' required>
+                <div class="salary-preview" id="salaryPreview">
+                    <div class="converted" id="convertedSalary">—</div>
+                    <div class="detail"><span>HRA (40%)</span><span id="previewHRA">—</span></div>
+                    <div class="detail"><span>DA (30%)</span><span id="previewDA">—</span></div>
+                    <div class="detail"><span>PF (12%)</span><span id="previewPF">—</span></div>
+                    <div class="detail"><span>Tax (10%)</span><span id="previewTax">—</span></div>
+                    <div class="detail" style="border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 4px; font-weight: 600; color: var(--text-primary);">
+                        <span>Net Salary</span><span id="previewNet">—</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="date_of_joining">Date of Joining</label>
+                <input type="date" id="date_of_joining" name="date_of_joining" class="form-control">
+            </div>
+        </div>
+
+        <!-- Login Credentials Section -->
+        <div style="border-top: 1px solid var(--border-color); margin-top: 24px; padding-top: 20px;">
+            <div class="toggle-group">
+                <input type="checkbox" id="create_login" name="create_login" value="1" 
+                       onchange="document.getElementById('loginFields').style.display = this.checked ? 'grid' : 'none'">
+                <label for="create_login">Create login credentials for this employee</label>
+            </div>
+
+            <div class="form-row" id="loginFields" style="display: none;">
+                <div class="form-group">
+                    <label for="username">Login Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Login Password</label>
+                    <input type="text" id="password" name="password" class="form-control" placeholder="Choose a password">
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group mt-3">
+            <button type="submit" class="btn btn-primary">✅ Add Employee</button>
+            <a href="{{ url_for('employees') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+    // Live salary preview with word-to-number conversion
+    let debounceTimer;
+    document.getElementById('basic_salary').addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const val = this.value.trim();
+        if (!val) {
+            document.getElementById('salaryPreview').classList.remove('visible');
+            return;
+        }
+        debounceTimer = setTimeout(async () => {
+            try {
+                const res = await fetch('/api/salary-preview', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({salary: val})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const p = data.payroll;
+                    document.getElementById('convertedSalary').textContent = data.formatted;
+                    document.getElementById('previewHRA').textContent = '₹' + p.hra.toLocaleString();
+                    document.getElementById('previewDA').textContent = '₹' + p.da.toLocaleString();
+                    document.getElementById('previewPF').textContent = '- ₹' + p.pf_deduction.toLocaleString();
+                    document.getElementById('previewTax').textContent = '- ₹' + p.tax_deduction.toLocaleString();
+                    document.getElementById('previewNet').textContent = '₹' + p.net_salary.toLocaleString();
+                    document.getElementById('salaryPreview').classList.add('visible');
+                } else {
+                    document.getElementById('salaryPreview').classList.remove('visible');
+                }
+            } catch(e) {
+                document.getElementById('salaryPreview').classList.remove('visible');
+            }
+        }, 500);
+    });
+</script>
+{% endblock %}

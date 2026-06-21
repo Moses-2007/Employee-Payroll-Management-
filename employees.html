@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - Employees{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Employees</h1>
+        <p>Manage all employee records and profiles.</p>
+    </div>
+    <a href="{{ url_for('add_employee') }}" class="btn btn-primary">+ Add Employee</a>
+</div>
+
+<div class="card">
+    {% if employees %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Emp Code</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Salary</th>
+                    <th>Rating</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td><span class="badge badge-info">{{ emp.emp_code }}</span></td>
+                    <td style="color: var(--text-primary); font-weight: 600;">{{ emp.name }}</td>
+                    <td>{{ emp.department or '—' }}</td>
+                    <td>{{ emp.designation or '—' }}</td>
+                    <td class="money text-success">₹{{ "{:,.0f}".format(emp.basic_salary) }}</td>
+                    <td style="color: #f1c40f;">
+                        {% for i in range(emp.star_rating) %}★{% endfor %}
+                    </td>
+                    <td>
+                        {% if emp.is_absent_today %}
+                        <span class="badge" style="background: var(--primary-red); color: white;">🔴 ABSENT</span>
+                        {% elif emp.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('edit_employee', emp_id=emp.id) }}" class="btn btn-sm btn-secondary">✏️ Edit</a>
+                            {% if emp.is_active %}
+                            <a href="{{ url_for('mark_absent', emp_id=emp.id) }}" class="btn btn-sm" style="background: var(--primary-yellow); color: #000;" 
+                               onclick="return confirm('Mark this employee as absent for today?')">📍 Mark Absent</a>
+                            <a href="{{ url_for('deactivate_employee', emp_id=emp.id) }}" class="btn btn-sm btn-danger" 
+                               onclick="return confirm('Deactivate this employee?')">🚫</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>No employees found</h3>
+        <p>Add your first employee to get started with payroll management.</p>
+        <a href="{{ url_for('add_employee') }}" class="btn btn-primary mt-2">+ Add Employee</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

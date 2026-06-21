@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - HR Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>HR Dashboard</h1>
+    <p>Welcome back, {{ session.get('username') }}! Here's your overview.</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value">{{ total_employees }}</div>
+        <div class="stat-label">Active Employees</div>
+    </div>
+    <div class="stat-card cyan">
+        <div class="stat-icon">💵</div>
+        <div class="stat-value">{{ total_payrolls }}</div>
+        <div class="stat-label">Payrolls Generated</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value">{{ pending_leaves }}</div>
+        <div class="stat-label">Pending Leave Requests</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value">{{ recognitions|length }}</div>
+        <div class="stat-label">Recent Recognitions</div>
+    </div>
+</div>
+
+    <!-- Pending Leave Approvals -->
+    {% if pending_approvals %}
+    <div class="card mt-4" style="border-left: 5px solid var(--primary-yellow); grid-column: span 2;">
+        <div class="card-header">
+            <h3>🔔 Leave Requests Pending Your Approval</h3>
+            <span class="badge badge-warning">{{ pending_approvals|length }} Required</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Absent Employee</th>
+                        <th>Substitute</th>
+                        <th>Leave Date</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_approvals %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ req.absent_name }}</td>
+                        <td style="color: var(--primary-cyan);">{{ req.substitute_name }}</td>
+                        <td>{{ req.leave_date }}</td>
+                        <td>{{ req.reason or '—' }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('approve_leave', leave_id=req.id) }}" class="btn btn-sm btn-success">✅ Approve</a>
+                                <a href="{{ url_for('reject_leave', leave_id=req.id) }}" class="btn btn-sm btn-danger">❌ Reject</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Recent Employees -->
+    <div class="card">
+        <div class="card-header">
+            <h3>👥 Recent Employees</h3>
+            <a href="{{ url_for('employees') }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        {% if recent_employees %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Salary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in recent_employees %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-weight: 600;">{{ emp.name }}</td>
+                        <td>{{ emp.department or '—' }}</td>
+                        <td class="money text-success">₹{{ "{:,.2f}".format(emp.basic_salary) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <h3>No employees yet</h3>
+            <p>Add your first employee to get started.</p>
+            <a href="{{ url_for('add_employee') }}" class="btn btn-primary btn-sm mt-2">+ Add Employee</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Recognitions -->
+    <div class="card">
+        <div class="card-header">
+            <h3>🏆 Recent Recognitions</h3>
+            <a href="{{ url_for('recognition') }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        {% if recognitions %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Type</th>
+                        <th>Bonus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in recognitions %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-weight: 600;">{{ rec.name }}</td>
+                        <td>
+                            {% if rec.recognition_type == 'day' %}
+                            <span class="badge badge-day">⭐ Day</span>
+                            {% elif rec.recognition_type == 'week' %}
+                            <span class="badge badge-week">🌟 Week</span>
+                            {% else %}
+                            <span class="badge badge-year">👑 Year</span>
+                            {% endif %}
+                        </td>
+                        <td class="money text-success">+₹500</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🏆</div>
+            <h3>No recognitions yet</h3>
+            <p>Award your first Employee of the Day!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h3>⚡ Quick Actions</h3>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('add_employee') }}" class="btn btn-primary">+ Add Employee</a>
+        <a href="{{ url_for('payroll') }}" class="btn btn-success">💵 Generate Payroll</a>
+        <a href="{{ url_for('recognition') }}" class="btn btn-warning">🏆 Award Recognition</a>
+        <a href="{{ url_for('leave') }}" class="btn btn-secondary">📋 Manage Leaves</a>
+    </div>
+</div>
+{% endblock %}

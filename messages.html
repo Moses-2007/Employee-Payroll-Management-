@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - Messages{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📩 Messages & Notifications</h1>
+    <p>Your personal messages, substitution reminders, and recognition notifications.</p>
+</div>
+
+<div class="card">
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="message-card {% if not msg.is_read %}unread{% endif %}">
+            <div class="message-header">
+                <span class="message-subject">{{ msg.subject }}</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    {% if msg.message_type == 'recognition' %}
+                    <span class="badge badge-warning">🏆 Recognition</span>
+                    {% elif msg.message_type == 'substitution' %}
+                    <span class="badge badge-info">📋 Substitution</span>
+                    {% else %}
+                    <span class="badge badge-purple">📩 Notification</span>
+                    {% endif %}
+                    <span class="message-time">{{ msg.created_at[:16] }}</span>
+                </div>
+            </div>
+            <div class="message-body">{{ msg.body }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📩</div>
+        <h3>No messages</h3>
+        <p>You'll receive notifications here for substitution assignments, recognition awards, and more.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

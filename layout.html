@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">💰</div>
+            <h2>PayrollPro</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="icon">📊</span> Dashboard
+            </a>
+
+            {% if session.get('role') == 'hr' %}
+            <div class="nav-section">HR Management</div>
+            <a href="{{ url_for('employees') }}" class="nav-link {% if request.endpoint in ['employees', 'add_employee', 'edit_employee'] %}active{% endif %}">
+                <span class="icon">👥</span> Employees
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('payroll') }}" class="nav-link {% if request.endpoint == 'payroll' %}active{% endif %}">
+                <span class="icon">💵</span> Payroll
+            </a>
+
+            <a href="{{ url_for('recognition') }}" class="nav-link {% if request.endpoint == 'recognition' %}active{% endif %}">
+                <span class="icon">🏆</span> Recognition
+            </a>
+
+            <a href="{{ url_for('leave') }}" class="nav-link {% if request.endpoint == 'leave' %}active{% endif %}">
+                <span class="icon">📋</span> Leave & Substitution
+            </a>
+
+            {% if session.get('employee_id') %}
+            <div class="nav-section">Personal</div>
+            <a href="{{ url_for('messages') }}" class="nav-link {% if request.endpoint == 'messages' %}active{% endif %}">
+                <span class="icon">📩</span> Messages
+                <span class="nav-badge" id="msgBadge" style="display:none;">0</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">{{ session.get('username', 'U')[0]|upper }}</div>
+                <div class="user-details">
+                    <div class="user-name">{{ session.get('username', 'User') }}</div>
+                    <div class="user-role">{{ session.get('role', 'employee')|upper }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="nav-link" style="color: #f87171; margin-top: 8px;">
+                <span class="icon">🚪</span> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Check unread messages
+    {% if session.get('employee_id') %}
+    async function checkMessages() {
+        try {
+            const res = await fetch('/messages/count');
+            const data = await res.json();
+            const badge = document.getElementById('msgBadge');
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch(e) {}
+    }
+    checkMessages();
+    setInterval(checkMessages, 30000);
+    {% endif %}
+</script>
+{% block page_scripts %}{% endblock %}
+{% endblock %}

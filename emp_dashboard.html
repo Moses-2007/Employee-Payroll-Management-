@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - My Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Dashboard</h1>
+    <p>Welcome, {{ session.get('username') }}! Here's your payroll summary.</p>
+</div>
+
+{% if is_absent_today %}
+<div class="alert alert-danger" style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; background: rgba(231, 76, 60, 0.1); border: 1px solid #e74c3c; padding: 16px; border-radius: 12px; color: #e74c3c;">
+    <span style="font-size: 24px;">📍</span>
+    <span style="font-weight: 700; text-transform: uppercase;">You are marked as ABSENT for today.</span>
+</div>
+{% endif %}
+
+{% if substitution_alert %}
+<div class="alert alert-info" style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; background: rgba(52, 152, 219, 0.1); border: 1px solid var(--primary-cyan); padding: 16px; border-radius: 12px; color: var(--text-main);">
+    <span style="font-size: 24px;">📋</span>
+    <span style="font-weight: 500;">{{ substitution_alert }}</span>
+</div>
+{% endif %}
+
+{% if pending_sub_requests %}
+<div class="card mb-4" style="border-left: 5px solid var(--primary-yellow);">
+    <div class="card-header">
+        <h3>🔔 Substitution Requests (Action Required)</h3>
+    </div>
+    <div style="padding: 16px;">
+        {% for req in pending_sub_requests %}
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div>
+                <strong>{{ req.absent_name }}</strong> requested you to substitute them on 
+                <span class="badge badge-info">{{ req.leave_date }}</span>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Reason: {{ req.reason or 'No reason provided' }}</div>
+                <div style="font-size: 13px; color: var(--primary-green); font-weight: 600;">Earning: ₹{{ "{:,.2f}".format(req.salary_transfer_amount) }}</div>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('substitute_accept', leave_id=req.id) }}" class="btn btn-sm btn-success">✅ Accept</a>
+                <a href="{{ url_for('substitute_decline', leave_id=req.id) }}" class="btn btn-sm btn-danger">❌ Decline</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if employee %}
+<!-- Employee Info & Salary -->
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon">👤</div>
+        <div class="stat-value" style="font-size: 20px;">{{ employee.name }}</div>
+        <div class="stat-label">{{ employee.emp_code }} • {{ employee.designation }}</div>
+    </div>
+    <div class="stat-card cyan">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">
+            {% for i in range(employee.star_rating) %}★{% endfor %}
+            {% for i in range(5 - employee.star_rating) %}<span style="opacity: 0.3;">★</span>{% endfor %}
+        </div>
+        <div class="stat-label">Performance Rating</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value">{{ employee.attendance_count }}</div>
+        <div class="stat-label">Days Present (This Month)</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">💵</div>
+        {% if payroll %}
+        <div class="stat-value">₹{{ "{:,.0f}".format(payroll.net_salary) }}</div>
+        <div class="stat-label">Net Salary ({{ payroll.month }})</div>
+        {% else %}
+        <div class="stat-value">—</div>
+        <div class="stat-label">Net Salary (Pending)</div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Personal Details Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📝 Personal & Professional Details</h3>
+        </div>
+        <div class="details-list" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">Date of Birth</span>
+                <span style="color: var(--text-main); font-weight: 500;">{{ employee.dob or 'N/A' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">Experience</span>
+                <span style="color: var(--text-main); font-weight: 500;">{{ employee.experience or 0 }} Years</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">Department</span>
+                <span style="color: var(--text-main); font-weight: 500;">{{ employee.department }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">Joining Date</span>
+                <span style="color: var(--text-main); font-weight: 500;">{{ employee.date_of_joining }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Email</span>
+                <span style="color: var(--text-main); font-weight: 500;">{{ employee.email }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Payroll Slip -->
+    <div class="card">
+        <div class="card-header">
+            <h3>💵 Latest Pay Slip</h3>
+        </div>
+        {% if payroll %}
+        <div class="payroll-slip" style="max-width: 100%;">
+            <div class="payroll-row earnings">
+                <span class="label">Basic Salary</span>
+                <span class="value">₹{{ "{:,.2f}".format(payroll.basic_salary) }}</span>
+            </div>
+            <div class="payroll-row earnings">
+                <span class="label">HRA + DA</span>
+                <span class="value">+ ₹{{ "{:,.2f}".format(payroll.hra + payroll.da) }}</span>
+            </div>
+            {% if payroll.bonus > 0 %}
+            <div class="payroll-row earnings">
+                <span class="label">🏆 Bonus</span>
+                <span class="value">+ ₹{{ "{:,.2f}".format(payroll.bonus) }}</span>
+            </div>
+            {% endif %}
+            <div class="payroll-row deductions">
+                <span class="label">Total Deductions</span>
+                <span class="value">- ₹{{ "{:,.2f}".format(payroll.total_deductions) }}</span>
+            </div>
+            <div class="payroll-row total">
+                <span class="label">Net Salary</span>
+                <span class="value">₹{{ "{:,.2f}".format(payroll.net_salary) }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💵</div>
+            <p>Payroll for this month is not yet generated.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Messages & Notifications -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📩 Recent Messages</h3>
+            <a href="{{ url_for('messages') }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="message-card {% if not msg.is_read %}unread{% endif %}">
+                <div class="message-header">
+                    <span class="message-subject">{{ msg.subject }}</span>
+                    <span class="message-time">{{ msg.created_at[:10] }}</span>
+                </div>
+                <div class="message-body">{{ msg.body[:100] }}...</div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <p>No new messages.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recognitions -->
+    <div class="card">
+        <div class="card-header">
+            <h3>🏆 My Recognitions</h3>
+        </div>
+        {% if recognitions %}
+        <div class="recognition-grid" style="grid-template-columns: 1fr; gap: 12px; padding: 12px;">
+            {% for rec in recognitions %}
+            <div class="recognition-card" style="display: flex; align-items: center; gap: 16px; padding: 12px;">
+                <span style="font-size: 24px;">{% if rec.recognition_type == 'day' %}⭐{% elif rec.recognition_type == 'week' %}🌟{% else %}👑{% endif %}</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600;">Employee of the {{ rec.recognition_type|capitalize }}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">{{ rec.recognized_date }}</div>
+                </div>
+                <div class="badge badge-success">+₹500</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Work hard to get featured here!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">👤</div>
+    <h3>No employee profile linked</h3>
+    <p>Contact HR to link your employee profile to your account.</p>
+</div>
+{% endif %}
+{% endblock %}

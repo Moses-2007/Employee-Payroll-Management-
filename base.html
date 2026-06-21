@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PayrollPro - Advanced Employee Payroll Management System with automated salary calculations, recognition awards, and leave management.">
+    <title>{% block title %}PayrollPro{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container" id="flashContainer">
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block body %}{% endblock %}
+
+    <script>
+        // Auto-dismiss flash messages
+        setTimeout(() => {
+            const container = document.getElementById('flashContainer');
+            if (container) {
+                container.style.transition = 'opacity 0.5s';
+                container.style.opacity = '0';
+                setTimeout(() => container.remove(), 500);
+            }
+        }, 5000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

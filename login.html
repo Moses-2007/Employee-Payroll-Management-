@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}PayrollPro - Login{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="logo-icon">💰</div>
+            <h1>PayrollPro</h1>
+            <p>Advanced Payroll Management</p>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 24px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px;">
+            <button type="button" class="btn btn-sm" id="btnEmployeeTab" style="flex: 1; background: var(--primary-cyan); color: white;" onclick="switchTab('employee')">👤 Employee Portal</button>
+            <button type="button" class="btn btn-sm" id="btnHrTab" style="flex: 1; background: transparent; color: var(--text-muted);" onclick="switchTab('hr')">🏢 HR Admin</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+            <div class="form-group">
+                <label for="username" id="usernameLabel">Employee ID / Username</label>
+                <input type="text" id="username" name="username" class="form-control" 
+                       placeholder="e.g. emp1001" autocomplete="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" 
+                       placeholder="Enter password" autocomplete="current-password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="loginBtn" style="background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue)); border: none; font-weight: 600;">
+                🔐 Secure Sign In
+            </button>
+        </form>
+
+        <div id="loginHints" style="margin-top: 24px; text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+            <p id="hintText">Try Username: <strong style="color: var(--primary-cyan);">emp1001</strong> / Password: <strong style="color: var(--primary-cyan);">password123</strong></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchTab(role) {
+        const empBtn = document.getElementById('btnEmployeeTab');
+        const hrBtn = document.getElementById('btnHrTab');
+        const userLabel = document.getElementById('usernameLabel');
+        const hintText = document.getElementById('hintText');
+        const userInput = document.getElementById('username');
+
+        if (role === 'employee') {
+            empBtn.style.background = 'var(--primary-cyan)';
+            empBtn.style.color = 'white';
+            hrBtn.style.background = 'transparent';
+            hrBtn.style.color = 'var(--text-muted)';
+            userLabel.innerText = 'Employee ID / Username';
+            userInput.placeholder = 'e.g. emp1001';
+            hintText.innerHTML = 'Try Username: <strong style="color: var(--primary-cyan);">emp1001</strong> / Password: <strong style="color: var(--primary-cyan);">password123</strong>';
+        } else {
+            hrBtn.style.background = 'var(--primary-purple)';
+            hrBtn.style.color = 'white';
+            empBtn.style.background = 'transparent';
+            empBtn.style.color = 'var(--text-muted)';
+            userLabel.innerText = 'HR Admin Username';
+            userInput.placeholder = 'admin';
+            hintText.innerHTML = 'Default Admin: <strong style="color: var(--primary-purple);">admin</strong> / Password: <strong style="color: var(--primary-purple);">admin123</strong>';
+        }
+    }
+</script>
+{% endblock %}

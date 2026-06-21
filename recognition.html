@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+{% block title %}PayrollPro - Recognition{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🏆 Employee Recognition</h1>
+    <p>Employee of the Day, Week, and Year — chosen by HR with ₹500 bonus each!</p>
+</div>
+
+{% if session.get('role') == 'hr' %}
+<!-- Award Recognition -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h3>Award Recognition</h3>
+    </div>
+    <form method="POST" action="{{ url_for('award_recognition') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="employee_id">Select Employee</label>
+                <select id="employee_id" name="employee_id" class="form-control" required>
+                    <option value="">Choose Employee</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.emp_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="recognition_type">Recognition Type</label>
+                <select id="recognition_type" name="recognition_type" class="form-control" required>
+                    <option value="">Select Type</option>
+                    <option value="day">⭐ Employee of the Day</option>
+                    <option value="week">🌟 Employee of the Week</option>
+                    <option value="year">👑 Employee of the Year</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="recognition_date">Date</label>
+                <input type="date" id="recognition_date" name="recognition_date" class="form-control" value="{{ today }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" class="form-control" placeholder="Reason for recognition..."></textarea>
+        </div>
+        <div style="display:flex; align-items:center; gap: 16px;">
+            <button type="submit" class="btn btn-warning">🏆 Award +₹500 Bonus</button>
+            <span style="font-size: 13px; color: var(--text-muted);">A congratulations message and ₹500 bonus will be sent to the employee.</span>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Recognition History -->
+{% if recognitions %}
+<div class="card mb-3">
+    <div class="card-header">
+        <h3>🎖️ Recognition Hall of Fame</h3>
+    </div>
+    <div class="recognition-grid">
+        {% for rec in recognitions[:6] %}
+        <div class="recognition-card">
+            <span class="trophy">
+                {% if rec.recognition_type == 'day' %}⭐
+                {% elif rec.recognition_type == 'week' %}🌟
+                {% else %}👑{% endif %}
+            </span>
+            <div class="emp-name">{{ rec.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">{{ rec.emp_code }} • {{ rec.department or '' }}</div>
+            <div class="rec-type" style="margin-top: 10px;">
+                {% if rec.recognition_type == 'day' %}
+                <span class="badge badge-day">Employee of the Day</span>
+                {% elif rec.recognition_type == 'week' %}
+                <span class="badge badge-week">Employee of the Week</span>
+                {% else %}
+                <span class="badge badge-year">Employee of the Year</span>
+                {% endif %}
+            </div>
+            <div class="bonus-tag">+₹500 Bonus</div>
+            <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">📅 {{ rec.recognized_date }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Full History Table -->
+<div class="card">
+    <div class="card-header">
+        <h3>📜 Full Recognition History</h3>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Bonus</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in recognitions %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 600;">{{ rec.name }} <span style="color: var(--text-muted); font-weight: 400;">({{ rec.emp_code }})</span></td>
+                    <td>
+                        {% if rec.recognition_type == 'day' %}
+                        <span class="badge badge-day">⭐ Day</span>
+                        {% elif rec.recognition_type == 'week' %}
+                        <span class="badge badge-week">🌟 Week</span>
+                        {% else %}
+                        <span class="badge badge-year">👑 Year</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ rec.recognized_date }}</td>
+                    <td class="money text-success">+₹500</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ rec.notes or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <h3>No recognitions yet</h3>
+        <p>{% if session.get('role') == 'hr' %}Use the form above to award your first Employee of the Day!{% else %}Recognitions will appear here when awarded by HR.{% endif %}</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
